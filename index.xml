@@ -1,0 +1,882 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+<title>Whoami on RoundofThree</title>
+<link>/</link>
+<description>Recent content in Whoami on RoundofThree</description>
+<generator>Hugo -- gohugo.io</generator>
+<language>en-us</language>
+<copyright>© 2024 RoundofThree</copyright>
+<lastBuildDate>Fri, 15 Mar 2024 16:29:59 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml"/>
+<item>
+<title>GEF for CheriBSD Morello</title>
+<link>/labs/gef-cheri/</link>
+<pubDate>Fri, 15 Mar 2024 16:29:59 +0000</pubDate>
+<guid>/labs/gef-cheri/</guid>
+<description>Why the need for this? Because having some handy commands to immediately generate a CLI visualization is very helpful when debugging a binary for exploit developers (or software development). For example, we can quickly get an idea of the state of the heap, which speeds up the process of debugging heap-based exploits. gef-cheri enables this for the CheriBSD platform in the Morello architecture (CHERI-enabled ARM64). You can still apply the same gef-cheri script to analyse non-CHERI binaries, in which case the behavior should be the same as the original gef.</description>
+<content>&lt;p&gt;Why the need for this? Because having some handy commands to immediately generate a CLI visualization
+is very helpful when debugging a binary for exploit developers (or software development). For example,
+we can quickly get an idea of the state of the heap, which speeds up the process of debugging heap-based
+exploits. &lt;a href="https://github.com/CTSRD-CHERI/gef"&gt;gef-cheri&lt;/a&gt; enables this for the CheriBSD platform in the Morello
+architecture (CHERI-enabled ARM64). You can still apply the same gef-cheri script to analyse non-CHERI binaries,
+in which case the behavior should be the same as the original &lt;a href="https://github.com/hugsy/gef"&gt;gef&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id="setup"&gt;Setup&lt;/h2&gt;
+&lt;p&gt;To load the gef-cheri python script when you start a debugging session, add this line to
+&lt;code&gt;~/.gdbinit&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-sh" data-lang="sh"&gt;source /path/to/gef-cheri/gef.py
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="some-commands"&gt;Some commands&lt;/h2&gt;
+&lt;p&gt;Here are some commands that I often use.&lt;/p&gt;
+&lt;h3 id="vmmap"&gt;vmmap&lt;/h3&gt;
+&lt;p&gt;Getting process memory mappings information is different in FreeBSD (and CheriBSD) and in Linux. gef-cheri is taught to identify a platform other than Linux. In addition, the original gef identifies the heap memory mappings by assuming that heap memory is managed by the glibc memory allocator. This is not true in FreeBSD (and CheriBSD), so we have to implement a heap memory blocks identification logic for each heap manager other than glibc malloc. Below is the output of the &lt;code&gt;vmmap&lt;/code&gt; command against a binary in CheriBSD running the jemalloc memory allocator.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-sh" data-lang="sh"&gt;gef&amp;gt; vm
+&lt;span style="color:#f92672"&gt;[&lt;/span&gt; Legend:  Code | Heap | Stack &lt;span style="color:#f92672"&gt;]&lt;/span&gt;
+Start                              End                                Offset                             Perm Path
+0x0000000000100000 0x0000000000101000 0x0000000000000000 r-- /home/roundofthree/heap_game
+0x0000000000101000 0x0000000000110000 0x0000000000001000 --- 
+0x0000000000110000 0x0000000000111000 0x0000000000000000 r-x /home/roundofthree/heap_game
+0x0000000000111000 0x0000000000120000 0x0000000000011000 --- 
+0x0000000000120000 0x0000000000122000 0x0000000000000000 r-- /home/roundofthree/heap_game
+0x0000000000122000 0x0000000000131000 0x0000000000022000 --- 
+0x0000000000131000 0x0000000000132000 0x0000000000000000 rw- 
+0x0000000040131000 0x0000000040139000 0x0000000000000000 r-- /libexec/ld-elf.so.1
+0x0000000040139000 0x0000000040148000 0x0000000000008000 --- 
+0x0000000040148000 0x0000000040163000 0x0000000000007000 r-x /libexec/ld-elf.so.1
+0x0000000040163000 0x0000000040172000 0x0000000000032000 --- 
+0x0000000040172000 0x0000000040175000 0x0000000000021000 rw- /libexec/ld-elf.so.1
+0x0000000040175000 0x0000000040184000 0x0000000000044000 --- 
+0x0000000040184000 0x0000000040185000 0x0000000000023000 rw- /libexec/ld-elf.so.1
+0x0000000040185000 0x0000000040187000 0x0000000000000000 rw- 
+0x0000000040187000 0x0000000040190000 0x0000000000002000 rw- 
+0x0000000040191000 0x0000000040223000 0x0000000000000000 r-- /lib/libc.so.7
+0x0000000040223000 0x0000000040232000 0x0000000000092000 --- 
+0x0000000040232000 0x0000000040370000 0x0000000000091000 r-x /lib/libc.so.7
+0x0000000040370000 0x000000004037f000 0x00000000001df000 --- 
+0x000000004037f000 0x000000004039c000 0x00000000001ce000 r-- /lib/libc.so.7
+0x000000004039c000 0x00000000403ab000 0x000000000020b000 --- 
+0x00000000403ab000 0x00000000403b6000 0x00000000001ea000 rw- /lib/libc.so.7
+0x00000000403b6000 0x00000000407e7000 0x0000000000000000 rw- 
+0x00000000407e7000 0x00000000407e9000 0x0000000000000000 rw- 
+0x00000000407e9000 0x00000000407f0000 0x0000000000000000 --- 
+0x00000000407f0000 0x0000000040811000 0x0000000000000000 rw- 
+0x0000000040811000 0x0000000040818000 0x0000000000000000 --- 
+0x0000000040818000 0x0000000040828000 0x0000000000000000 rw- 
+0x0000000040828000 0x0000000040877000 0x0000000000010000 rw- 
+0x0000000040a00000 0x0000000040c00000 0x0000000000000000 rw- &lt;span style="color:#f92672"&gt;[&lt;/span&gt;heap block&lt;span style="color:#f92672"&gt;]&lt;/span&gt;
+0x0000000040c00000 0x0000000040e00000 0x0000000000200000 rw- &lt;span style="color:#f92672"&gt;[&lt;/span&gt;heap&lt;span style="color:#f92672"&gt;]&lt;/span&gt;
+0x0000000040e00000 0x0000000041400000 0x0000000000400000 rw- &lt;span style="color:#f92672"&gt;[&lt;/span&gt;heap block&lt;span style="color:#f92672"&gt;]&lt;/span&gt;
+0x0000fbfdbffff000 0x0000fbfdc0000000 0x0000000000000000 rw- 
+0x0000fbfdc0000000 0x0000fe0000000000 0x0000000000000000 rw- 
+0x0000ffffbfeff000 0x0000ffffbff80000 0x0000000000000000 rw- 
+0x0000ffffbff80000 0x0000fffffff60000 0x00000000001b001b --- 
+0x0000fffffff60000 0x0000fffffff80000 0x0000000000000000 rw- &lt;span style="color:#f92672"&gt;[&lt;/span&gt;stack&lt;span style="color:#f92672"&gt;]&lt;/span&gt;
+0x0000fffffffff000 0x0001000000000000 0x0000000000000000 r-x
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="telescope"&gt;telescope&lt;/h3&gt;
+&lt;p&gt;One notable difference is that the stack alignment is 0x10 in
+CHERI-enabled platforms. By default, &lt;code&gt;telescope&lt;/code&gt; without
+arguments will display a stack view starting from the address
+pointed by &lt;code&gt;$csp&lt;/code&gt; (&lt;code&gt;$rcsp&lt;/code&gt; if in Restricted mode, see &lt;a href="https://www.cl.cam.ac.uk/techreports/UCAM-CL-TR-987.pdf"&gt;CHERI ISAv9&lt;/a&gt;).
+We also can use the capability tag as a filter to indicate whether to dereference or not, it&amp;rsquo;s more accurate than guessing whether a value is a code or data pointer.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-sh" data-lang="sh"&gt;gef&amp;gt; telescope
+0x0000fffffff7f800│+0x0000: 0x0000fffffff7f820 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000fffffff7f850 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000fffffff7fd00 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000fffffff7fe60 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000fffffff7ff60 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000fffffff7ff80 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000fffffff7ffe0 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;	 ← $c29, $csp
+0x0000fffffff7f810│+0x0010: 0x00000000402bc9d9 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rxRX,0x40191000-0x407e7000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x656000&lt;span style="color:#f92672"&gt;]&lt;/span&gt; &lt;span style="color:#f92672"&gt;(&lt;/span&gt;sen&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  &amp;lt;_sread+0020&amp;gt; cmp w0,  &lt;span style="color:#75715e"&gt;#0x1&lt;/span&gt;
+0x0000fffffff7f820│+0x0020: 0x0000fffffff7f850 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000fffffff7fd00 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000fffffff7fe60 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000fffffff7ff60 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000fffffff7ff80 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000fffffff7ffe0 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000000000000000
+0x0000fffffff7f830│+0x0030: 0x00000000402bbfa1 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rxRX,0x40191000-0x407e7000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x656000&lt;span style="color:#f92672"&gt;]&lt;/span&gt; &lt;span style="color:#f92672"&gt;(&lt;/span&gt;sen&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  &amp;lt;__srefill+0154&amp;gt; ldrh w8,  &lt;span style="color:#f92672"&gt;[&lt;/span&gt;c19,  &lt;span style="color:#75715e"&gt;#24]&lt;/span&gt;
+0x0000fffffff7f840│+0x0040: 0x00000000403adfa0 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRWX,0x403adfa0-0x403ae510,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x570&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000000040c17000 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0x40c17000-0x40c18000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x1000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x00000000000a0a31 &lt;span style="color:#f92672"&gt;(&lt;/span&gt;&lt;span style="color:#e6db74"&gt;&amp;#34;1\n\n&amp;#34;&lt;/span&gt;?&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+0x0000fffffff7f850│+0x0050: 0x0000fffffff7fd00 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000fffffff7fe60 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000fffffff7ff60 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000fffffff7ff80 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000fffffff7ffe0 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000000000000000
+0x0000fffffff7f860│+0x0060: 0x00000000402c11d9 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rxRX,0x40191000-0x407e7000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x656000&lt;span style="color:#f92672"&gt;]&lt;/span&gt; &lt;span style="color:#f92672"&gt;(&lt;/span&gt;sen&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  &amp;lt;__svfscanf+0538&amp;gt; cbnz w0,  0x402c23ec &amp;lt;__svfscanf+5964&amp;gt;
+0x0000fffffff7f870│+0x0070: 0x0000000000000000                
+0x0000fffffff7f880│+0x0080: 0x0000fffffff7f967 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xfffffff7f968-0xfffffff7fb69,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x201&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x5d40007c50fb2000
+0x0000fffffff7f890│+0x0090: 0x0000fffffff7f9d0 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000fffffff7fc10 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000fffffff7fdc0 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000fffffff7fea0 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xfffffff7fea0-0xfffffff7feb0,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x10&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000fffffff7ff24 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xfffffff7ff24-0xfffffff7ff28,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x4&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000000100000001
+gef&amp;gt;  
+0x0000fffffff7f8a0│+0x00a0: 0x0000fffffff7fc70 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xfffffff7fc70-0xfffffff7fcf0,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x80&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000000000001800
+0x0000fffffff7f8b0│+0x00b0: 0x0000fffffff7fa00 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xfffffff7fa00-0xfffffff7fa80,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x80&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0xfffffffffffffffffb5d25837d7ff700
+0x0000fffffff7f8c0│+0x00c0: 0x0000000a0611487b                
+0x0000fffffff7f8d0│+0x00d0: 0x00000000403ae170 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRWX,0x403adfa0-0x403ae510,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x570&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000000040c16000 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0x40c16000-0x40c17000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x1000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  &lt;span style="color:#e6db74"&gt;&amp;#34;Has chunk 2 been freed? (1 for Yes, 0 for No): &amp;#34;&lt;/span&gt;
+0x0000fffffff7f8e0│+0x00e0: 0x0000000000000001                
+0x0000fffffff7f8f0│+0x00f0: 0x00000000403ad5a0 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRWX,0x403ad5a0-0x403ad700,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x160&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000000000000000
+0x0000fffffff7f900│+0x0100: 0x000000004081a240 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0x4081a240-0x4081a250,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x10&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0x0000000000000000
+0x0000fffffff7f910│+0x0110: 0x0000000000000000                
+0x0000fffffff7f920│+0x0120: 0x0000fffffff7fb6c &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0xfffffff7fb6c-0xfffffff7fc6c,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x100&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  0xfffffffffffffffffff7fb1fdc5d4000
+0x0000fffffff7f930│+0x0130: 0x0000ffffffffffff &lt;span style="color:#f92672"&gt;[&lt;/span&gt;-,0xffffbff80000-0xfffffff80000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt; &lt;span style="color:#f92672"&gt;(&lt;/span&gt;bad&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="xinfo"&gt;xinfo&lt;/h3&gt;
+&lt;p&gt;This is exactly the same command in the original gef script.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-sh" data-lang="sh"&gt;gef&amp;gt;  xinfo 0x40c28000
+──────────────────────────────────────────────────────────────────────────────────────────────── xinfo: 0x40c28000 ────────────────────────────────────────────────────────────────────────────────────────────────
+Page: 0x0000000040c00000  →  0x0000000040e00000 &lt;span style="color:#f92672"&gt;(&lt;/span&gt;size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x200000&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+Permissions: rw-
+Pathname: &lt;span style="color:#f92672"&gt;[&lt;/span&gt;heap&lt;span style="color:#f92672"&gt;]&lt;/span&gt;
+Offset &lt;span style="color:#f92672"&gt;(&lt;/span&gt;from page&lt;span style="color:#f92672"&gt;)&lt;/span&gt;: 0x28000
+Inode: &lt;span style="color:#ae81ff"&gt;0&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="scancap"&gt;scancap&lt;/h3&gt;
+&lt;p&gt;gef-cheri implements the needle-in-haystack search with an additional filter of valid capabilities (valid tag). For example, the example below scans for valid capabilities in the stack memory region that points to the heap memory region.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-sh" data-lang="sh"&gt;gef&amp;gt;  scan stack heap 
+&lt;span style="color:#f92672"&gt;[&lt;/span&gt;+&lt;span style="color:#f92672"&gt;]&lt;/span&gt; In &lt;span style="color:#e6db74"&gt;&amp;#39;[stack]&amp;#39;&lt;/span&gt; &lt;span style="color:#f92672"&gt;(&lt;/span&gt;0xfffffff60000-0xfffffff80000&lt;span style="color:#f92672"&gt;)&lt;/span&gt;, permission&lt;span style="color:#f92672"&gt;=&lt;/span&gt;rw-
+  0xfffffff7cb50  →  0x00000040c0e000 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0x40c00000-0x40e00000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x200000&lt;span style="color:#f92672"&gt;]&lt;/span&gt; 
+  0xfffffff7df80  →  0x00000040c1f000 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0x40c00000-0x40e00000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x200000&lt;span style="color:#f92672"&gt;]&lt;/span&gt; 
+  0xfffffff7e880  →  0x00000040c28000 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0x40c00000-0x40e00000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x200000&lt;span style="color:#f92672"&gt;]&lt;/span&gt; 
+  0xfffffff7f6a0  →  0x00000040c16000 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0x40c16000-0x40c17000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x1000&lt;span style="color:#f92672"&gt;]&lt;/span&gt; 
+  0xfffffff7fb50  →  0x000000001009b1 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rR,0x100993-0x1009b4,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x21&lt;span style="color:#f92672"&gt;]&lt;/span&gt; 
+  0xfffffff7fdb0  →  0x00000000100945 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rR,0x100945-0x100949,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x4&lt;span style="color:#f92672"&gt;]&lt;/span&gt; 
+  0xfffffff7fe70  →  0x00000000110d35 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rxRX,0x100000-0x1313c0,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x313c0&lt;span style="color:#f92672"&gt;]&lt;/span&gt; &lt;span style="color:#f92672"&gt;(&lt;/span&gt;sen&lt;span style="color:#f92672"&gt;)&lt;/span&gt; 
+  0xfffffff7fe90  →  0x00000000110b8d &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rxRX,0x100000-0x1313c0,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x313c0&lt;span style="color:#f92672"&gt;]&lt;/span&gt; &lt;span style="color:#f92672"&gt;(&lt;/span&gt;sen&lt;span style="color:#f92672"&gt;)&lt;/span&gt; 
+  0xfffffff7feb0  →  0x00000040c28000 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0x40c28000-0x40c28010,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x10&lt;span style="color:#f92672"&gt;]&lt;/span&gt; 
+  0xfffffff7ff40  →  0x00000040c20000 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0x40c20000-0x40c200a0,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0xa0&lt;span style="color:#f92672"&gt;]&lt;/span&gt; 
+  0xfffffff7ff90  →  0x00000000110b59 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rxRX,0x100000-0x1313c0,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x313c0&lt;span style="color:#f92672"&gt;]&lt;/span&gt; &lt;span style="color:#f92672"&gt;(&lt;/span&gt;sen&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="more-heap-managers"&gt;More heap managers&lt;/h2&gt;
+&lt;p&gt;To analyze heaps managed by allocators other than glibc allocator, I developed some plugins in &lt;a href="https://github.com/CTSRD-CHERI/gef-plugins"&gt;gef-plugins repo&lt;/a&gt;. To load it at the start of a debugging session, add this line to &lt;code&gt;~/.gdbinit&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-sh" data-lang="sh"&gt;gef config gef.extra_plugins_dir /path/to/gef-plugins
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="jemalloc"&gt;jemalloc&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;jheap chunks&lt;/code&gt;: list in use heap allocations&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-sh" data-lang="sh"&gt;gef&amp;gt;  jheap chunks
+Chunk&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40c00000, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0xe000 &lt;span style="color:#f92672"&gt;(&lt;/span&gt;Large&lt;span style="color:#f92672"&gt;)&lt;/span&gt;, status&lt;span style="color:#f92672"&gt;=&lt;/span&gt;Used&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+    &lt;span style="color:#f92672"&gt;[&lt;/span&gt;0x0000000040c00000     &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt;    ................&lt;span style="color:#f92672"&gt;]&lt;/span&gt;
+Chunk&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40c0e000, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x8 &lt;span style="color:#f92672"&gt;(&lt;/span&gt;Small&lt;span style="color:#f92672"&gt;)&lt;/span&gt;, status&lt;span style="color:#f92672"&gt;=&lt;/span&gt;Used&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+    &lt;span style="color:#f92672"&gt;[&lt;/span&gt;0x0000000040c0e000     e2 &lt;span style="color:#ae81ff"&gt;03&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; e8 &lt;span style="color:#ae81ff"&gt;03&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt;    ................&lt;span style="color:#f92672"&gt;]&lt;/span&gt;
+Chunk&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40c0f000, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0xe0 &lt;span style="color:#f92672"&gt;(&lt;/span&gt;Small&lt;span style="color:#f92672"&gt;)&lt;/span&gt;, status&lt;span style="color:#f92672"&gt;=&lt;/span&gt;Used&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+    &lt;span style="color:#f92672"&gt;[&lt;/span&gt;0x0000000040c0f000     &lt;span style="color:#ae81ff"&gt;70&lt;/span&gt; f0 c0 &lt;span style="color:#ae81ff"&gt;40&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; f0 d0 &lt;span style="color:#ae81ff"&gt;70&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;40&lt;/span&gt; 5d dc    p..@.......p.@&lt;span style="color:#f92672"&gt;]&lt;/span&gt;.&lt;span style="color:#f92672"&gt;]&lt;/span&gt;
+Chunk&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40c16000, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x1000 &lt;span style="color:#f92672"&gt;(&lt;/span&gt;Small&lt;span style="color:#f92672"&gt;)&lt;/span&gt;, status&lt;span style="color:#f92672"&gt;=&lt;/span&gt;Used&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+    &lt;span style="color:#f92672"&gt;[&lt;/span&gt;0x0000000040c16000     &lt;span style="color:#ae81ff"&gt;48&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;61&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;73&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;20&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;63&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;68&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;75&lt;/span&gt; 6e 6b &lt;span style="color:#ae81ff"&gt;20&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;32&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;20&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;62&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;65&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;65&lt;/span&gt; 6e    Has chunk &lt;span style="color:#ae81ff"&gt;2&lt;/span&gt; been&lt;span style="color:#f92672"&gt;]&lt;/span&gt;
+Chunk&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40c17000, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x1000 &lt;span style="color:#f92672"&gt;(&lt;/span&gt;Small&lt;span style="color:#f92672"&gt;)&lt;/span&gt;, status&lt;span style="color:#f92672"&gt;=&lt;/span&gt;Used&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+    &lt;span style="color:#f92672"&gt;[&lt;/span&gt;0x0000000040c17000     &lt;span style="color:#ae81ff"&gt;31&lt;/span&gt; 0a 0a &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt;    1...............&lt;span style="color:#f92672"&gt;]&lt;/span&gt;
+Chunk&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40c20000, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0xa0 &lt;span style="color:#f92672"&gt;(&lt;/span&gt;Small&lt;span style="color:#f92672"&gt;)&lt;/span&gt;, status&lt;span style="color:#f92672"&gt;=&lt;/span&gt;Used&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+    &lt;span style="color:#f92672"&gt;[&lt;/span&gt;0x0000000040c20000     &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;50&lt;/span&gt; c2 &lt;span style="color:#ae81ff"&gt;40&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;07&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;50&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;07&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;30&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;40&lt;/span&gt; 5d dc    .P.@.....P.0.@&lt;span style="color:#f92672"&gt;]&lt;/span&gt;.&lt;span style="color:#f92672"&gt;]&lt;/span&gt;
+Chunk&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40c25000, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x6000 &lt;span style="color:#f92672"&gt;(&lt;/span&gt;Large&lt;span style="color:#f92672"&gt;)&lt;/span&gt;, status&lt;span style="color:#f92672"&gt;=&lt;/span&gt;Used&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+    &lt;span style="color:#f92672"&gt;[&lt;/span&gt;0x0000000040c25000     &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt;    ................&lt;span style="color:#f92672"&gt;]&lt;/span&gt;
+Chunk&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40c2b000, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x10000 &lt;span style="color:#f92672"&gt;(&lt;/span&gt;Large&lt;span style="color:#f92672"&gt;)&lt;/span&gt;, status&lt;span style="color:#f92672"&gt;=&lt;/span&gt;Used&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+    &lt;span style="color:#f92672"&gt;[&lt;/span&gt;0x0000000040c2b000     &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;00&lt;/span&gt;    ................&lt;span style="color:#f92672"&gt;]&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;jheap chunk &amp;lt;address&amp;gt;&lt;/code&gt;: inspect a heap allocation&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-sh" data-lang="sh"&gt;gef&amp;gt;  jheap chunk 0x40c40000
+Chunk&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40c40000, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x4000 &lt;span style="color:#f92672"&gt;(&lt;/span&gt;Large&lt;span style="color:#f92672"&gt;)&lt;/span&gt;, status&lt;span style="color:#f92672"&gt;=&lt;/span&gt;Free&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+In quarantine: Yes
+In tcache: No
+Extent base: 0x40c40000
+Extent size: 0x4000
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;jheap uaf [noheap]&lt;/code&gt;: scan for freed heap allocations that are pointed by valid capabilities in memory. Optionally, exclude capabilities stored in the heap.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-sh" data-lang="sh"&gt;gef&amp;gt;  jheap uaf noheap
+&lt;span style="color:#f92672"&gt;[&lt;/span&gt;+&lt;span style="color:#f92672"&gt;]&lt;/span&gt; In &lt;span style="color:#e6db74"&gt;&amp;#39;[stack]&amp;#39;&lt;/span&gt; &lt;span style="color:#f92672"&gt;(&lt;/span&gt;0xfffffff60000-0xfffffff80000&lt;span style="color:#f92672"&gt;)&lt;/span&gt;, permission&lt;span style="color:#f92672"&gt;=&lt;/span&gt;rw-
+  0xfffffff7df80  →  0x00000040c1f000 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rwRW,0x40c00000-0x40e00000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x200000&lt;span style="color:#f92672"&gt;]&lt;/span&gt; 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="snmalloc"&gt;snmalloc&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;snheap info&lt;/code&gt;: print pagemap address&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;snheap localcache&lt;/code&gt;: list entries in local cache &lt;code&gt;LocalCache&lt;/code&gt; (also called small fast free lists)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;snheap slabs&lt;/code&gt;: lists slabs in the core allocator (there can be multiple slabs per small size class, and large slabs)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;snheap remote&lt;/code&gt;: lists the remote deallocation queue of the current of given thread(s)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;snheap freelists&lt;/code&gt;: list entries in local cache &lt;code&gt;LocalCache&lt;/code&gt; in the local allocator, the deallocation queue in remote allocators and active slab free lists in the core allocator&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-sh" data-lang="sh"&gt;gef&amp;gt;  snheap freelists 
+&lt;span style="color:#f92672"&gt;[&lt;/span&gt;+&lt;span style="color:#f92672"&gt;]&lt;/span&gt; Guessed the LocalAlloc address to be 0x40a42070
+────────────────────────────────────────────────────────────────────────────── Thread 1: localcache &lt;span style="color:#66d9ef"&gt;for&lt;/span&gt; LocalAlloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40a42070&lt;span style="color:#f92672"&gt;)&lt;/span&gt; ──────────────────────────────────────────────────────────────────────────────
+small_fast_free_lists&lt;span style="color:#f92672"&gt;[&lt;/span&gt;idx&lt;span style="color:#f92672"&gt;=&lt;/span&gt;2, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x60, count&lt;span style="color:#f92672"&gt;=&lt;/span&gt;169&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42024060&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x420240c0&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42024120&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42024180&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  ...  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42027f60&lt;span style="color:#f92672"&gt;)&lt;/span&gt; 
+
+small_fast_free_lists&lt;span style="color:#f92672"&gt;[&lt;/span&gt;idx&lt;span style="color:#f92672"&gt;=&lt;/span&gt;3, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x80, count&lt;span style="color:#f92672"&gt;=&lt;/span&gt;127&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42008080&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42008100&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42008180&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42008200&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  ...  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x4200bf80&lt;span style="color:#f92672"&gt;)&lt;/span&gt; 
+
+small_fast_free_lists&lt;span style="color:#f92672"&gt;[&lt;/span&gt;idx&lt;span style="color:#f92672"&gt;=&lt;/span&gt;4, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0xa0, count&lt;span style="color:#f92672"&gt;=&lt;/span&gt;101&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x420200a0&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42020140&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x420201e0&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42020280&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  ...  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42023f20&lt;span style="color:#f92672"&gt;)&lt;/span&gt; 
+
+small_fast_free_lists&lt;span style="color:#f92672"&gt;[&lt;/span&gt;idx&lt;span style="color:#f92672"&gt;=&lt;/span&gt;6, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0xe0, count&lt;span style="color:#f92672"&gt;=&lt;/span&gt;72&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x420100e0&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x420101c0&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x420102a0&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42010380&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  ...  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42013f00&lt;span style="color:#f92672"&gt;)&lt;/span&gt; 
+
+small_fast_free_lists&lt;span style="color:#f92672"&gt;[&lt;/span&gt;idx&lt;span style="color:#f92672"&gt;=&lt;/span&gt;20, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0xa00, count&lt;span style="color:#f92672"&gt;=&lt;/span&gt;5&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42004a00&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42005400&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42005e00&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42006800&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  ...  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42007200&lt;span style="color:#f92672"&gt;)&lt;/span&gt; 
+
+small_fast_free_lists&lt;span style="color:#f92672"&gt;[&lt;/span&gt;idx&lt;span style="color:#f92672"&gt;=&lt;/span&gt;23, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x1000, count&lt;span style="color:#f92672"&gt;=&lt;/span&gt;3&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42015000&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42016000&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42017000&lt;span style="color:#f92672"&gt;)&lt;/span&gt; 
+
+small_fast_free_lists&lt;span style="color:#f92672"&gt;[&lt;/span&gt;idx&lt;span style="color:#f92672"&gt;=&lt;/span&gt;30, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x3800, count&lt;span style="color:#f92672"&gt;=&lt;/span&gt;3&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42083800&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42087000&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x4208a800&lt;span style="color:#f92672"&gt;)&lt;/span&gt; 
+
+small_fast_free_lists&lt;span style="color:#f92672"&gt;[&lt;/span&gt;idx&lt;span style="color:#f92672"&gt;=&lt;/span&gt;34, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x7000, count&lt;span style="color:#f92672"&gt;=&lt;/span&gt;3&lt;span style="color:#f92672"&gt;]&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42047000&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x4204e000&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42055000&lt;span style="color:#f92672"&gt;)&lt;/span&gt; 
+
+────────────────────────────────────────────────────────────── Thread 1: active slabs &lt;span style="color:#66d9ef"&gt;for&lt;/span&gt; CoreAlloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42000000&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  ←  LocalAlloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40a42070&lt;span style="color:#f92672"&gt;)&lt;/span&gt; ──────────────────────────────────────────────────────────────
+SlabMetadataCache&lt;span style="color:#f92672"&gt;[&lt;/span&gt;idx&lt;span style="color:#f92672"&gt;=&lt;/span&gt;34, alloc_size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x7000, unused&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0, length&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0&lt;span style="color:#f92672"&gt;]&lt;/span&gt;: 
+ | →  SlabMetadata&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42000d80, needed&lt;span style="color:#f92672"&gt;=&lt;/span&gt;3, sleeping&lt;span style="color:#f92672"&gt;=&lt;/span&gt;False, large&lt;span style="color:#f92672"&gt;=&lt;/span&gt;False&lt;span style="color:#f92672"&gt;)&lt;/span&gt; &lt;span style="color:#f92672"&gt;(&lt;/span&gt;count&lt;span style="color:#f92672"&gt;=&lt;/span&gt;1&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  →  Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42040000&lt;span style="color:#f92672"&gt;)&lt;/span&gt; 
+
+───────────────────────────────────────────────────────────────── Thread 1: laden &lt;span style="color:#66d9ef"&gt;for&lt;/span&gt; CoreAlloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42000000&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  ←  LocalAlloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40a42070&lt;span style="color:#f92672"&gt;)&lt;/span&gt; ─────────────────────────────────────────────────────────────────
+SlabMetadata&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42000e80, needed&lt;span style="color:#f92672"&gt;=&lt;/span&gt;1, sleeping&lt;span style="color:#f92672"&gt;=&lt;/span&gt;True, large&lt;span style="color:#f92672"&gt;=&lt;/span&gt;False&lt;span style="color:#f92672"&gt;)&lt;/span&gt; &lt;span style="color:#f92672"&gt;(&lt;/span&gt;count&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0&lt;span style="color:#f92672"&gt;)&lt;/span&gt; 
+
+SlabMetadata&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42000e00, needed&lt;span style="color:#f92672"&gt;=&lt;/span&gt;32, sleeping&lt;span style="color:#f92672"&gt;=&lt;/span&gt;True, large&lt;span style="color:#f92672"&gt;=&lt;/span&gt;False&lt;span style="color:#f92672"&gt;)&lt;/span&gt; &lt;span style="color:#f92672"&gt;(&lt;/span&gt;count&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0&lt;span style="color:#f92672"&gt;)&lt;/span&gt; 
+
+SlabMetadata&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42000d00, needed&lt;span style="color:#f92672"&gt;=&lt;/span&gt;25, sleeping&lt;span style="color:#f92672"&gt;=&lt;/span&gt;True, large&lt;span style="color:#f92672"&gt;=&lt;/span&gt;False&lt;span style="color:#f92672"&gt;)&lt;/span&gt; &lt;span style="color:#f92672"&gt;(&lt;/span&gt;count&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0&lt;span style="color:#f92672"&gt;)&lt;/span&gt; 
+
+SlabMetadata&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42000c80, needed&lt;span style="color:#f92672"&gt;=&lt;/span&gt;1, sleeping&lt;span style="color:#f92672"&gt;=&lt;/span&gt;True, large&lt;span style="color:#f92672"&gt;=&lt;/span&gt;False&lt;span style="color:#f92672"&gt;)&lt;/span&gt; &lt;span style="color:#f92672"&gt;(&lt;/span&gt;count&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0&lt;span style="color:#f92672"&gt;)&lt;/span&gt; 
+
+SlabMetadata&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42000c00, needed&lt;span style="color:#f92672"&gt;=&lt;/span&gt;18, sleeping&lt;span style="color:#f92672"&gt;=&lt;/span&gt;True, large&lt;span style="color:#f92672"&gt;=&lt;/span&gt;False&lt;span style="color:#f92672"&gt;)&lt;/span&gt; &lt;span style="color:#f92672"&gt;(&lt;/span&gt;count&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0&lt;span style="color:#f92672"&gt;)&lt;/span&gt; 
+
+SlabMetadata&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42000b80, needed&lt;span style="color:#f92672"&gt;=&lt;/span&gt;32, sleeping&lt;span style="color:#f92672"&gt;=&lt;/span&gt;True, large&lt;span style="color:#f92672"&gt;=&lt;/span&gt;False&lt;span style="color:#f92672"&gt;)&lt;/span&gt; &lt;span style="color:#f92672"&gt;(&lt;/span&gt;count&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0&lt;span style="color:#f92672"&gt;)&lt;/span&gt; 
+
+SlabMetadata&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42000b00, needed&lt;span style="color:#f92672"&gt;=&lt;/span&gt;1, sleeping&lt;span style="color:#f92672"&gt;=&lt;/span&gt;True, large&lt;span style="color:#f92672"&gt;=&lt;/span&gt;False&lt;span style="color:#f92672"&gt;)&lt;/span&gt; &lt;span style="color:#f92672"&gt;(&lt;/span&gt;count&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0&lt;span style="color:#f92672"&gt;)&lt;/span&gt; 
+
+───────────────────────────────────────────────────── Thread 1: remote deallocation queue &lt;span style="color:#66d9ef"&gt;for&lt;/span&gt; RemoteAllocator&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42000800&lt;span style="color:#f92672"&gt;)&lt;/span&gt;  ←  CoreAlloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42000000&lt;span style="color:#f92672"&gt;)&lt;/span&gt; ─────────────────────────────────────────────────────
+&lt;span style="color:#f92672"&gt;[&lt;/span&gt;+&lt;span style="color:#f92672"&gt;]&lt;/span&gt; Remote deallocation list is empty
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;snheap chunk &amp;lt;address&amp;gt;&lt;/code&gt;: lists details about the &lt;code&gt;Alloc&lt;/code&gt; and its slab. If the metaentry has the &lt;code&gt;REMOTE_BACKEND_MARKER&lt;/code&gt; bit asserted, that is, the chunk is owned by the backend (not &lt;code&gt;Alloc&lt;/code&gt;-bounded), then indicate it as a &lt;code&gt;Chunk&lt;/code&gt;. Because backend chunks' metaentry are parsed differently depending on the specific &lt;code&gt;Range&lt;/code&gt;, we can make a best guess of the owning &lt;code&gt;Range&lt;/code&gt;. In the case that CHERI revocation is enabled, also print whether it is quarantined and its revocation bit value.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-sh" data-lang="sh"&gt;gef&amp;gt;  snheap chunk 0x42024060
+Alloc&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42024060&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+Object in quarantine: False
+Start of object: 0x42024060
+Object size: 0x60
+Offset into object: 0x0
+Metaentry @ 0x50210120
+Associated slab details:
+SlabMetadata&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x42000e00, needed&lt;span style="color:#f92672"&gt;=&lt;/span&gt;32, sleeping&lt;span style="color:#f92672"&gt;=&lt;/span&gt;True, large&lt;span style="color:#f92672"&gt;=&lt;/span&gt;False&lt;span style="color:#f92672"&gt;)&lt;/span&gt; &lt;span style="color:#f92672"&gt;(&lt;/span&gt;count&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0&lt;span style="color:#f92672"&gt;)&lt;/span&gt; 
+&lt;span style="color:#f92672"&gt;[&lt;/span&gt;+&lt;span style="color:#f92672"&gt;]&lt;/span&gt; Free list is empty
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="mrs-wrapper"&gt;mrs wrapper&lt;/h3&gt;
+&lt;p&gt;CheriBSD 23.11 malloc is shipped with the mrs wrapper around memory allocation APIs: &lt;code&gt;mrs_malloc&lt;/code&gt;, &lt;code&gt;mrs_free&lt;/code&gt;&amp;hellip;, to enforce heap temporal safety. This plugin provides commands to query for mrs-specific information:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;mrs info&lt;/code&gt;: display general information about the mrs quarantine, global state and the revocation bitmap.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-sh" data-lang="sh"&gt;gef&amp;gt;  mrs info 
+──────────────────────────────────────────────────────────────────────────────────────────────────── Thread &lt;span style="color:#ae81ff"&gt;1&lt;/span&gt; ────────────────────────────────────────────────────────────────────────────────────────────────────
+Allocated size: 0x8a90
+Max allocated size: 0x8a90
+Quarantine size: 0x5100
+Quarantine max size: 0x5100
+Entire revocation map capability: 0x0000fc0000000000 &lt;span style="color:#f92672"&gt;[&lt;/span&gt;rw,0xfc0000000000-0xfe0000000000,len&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x20000000000&lt;span style="color:#f92672"&gt;]&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;mrs chunk &amp;lt;address&amp;gt;&lt;/code&gt;: query whether this chunk is owned by the allocator or quarantined. Also show shadow bitmap offset and value. The information we can query is limited because the capability load generation counter registers are not available to gdb in ring 3, so we can&amp;rsquo;t inspect the kernel internal state of caprevoke unless debugging the kernel or using qemu.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-sh" data-lang="sh"&gt;gef&amp;gt;  mrs chunk 0x40c40000
+Chunk&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40c40000&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+In quarantine: Yes
+Revocation bit address: 0xfc0000818800
+Revocation bit set &lt;span style="color:#f92672"&gt;(&lt;/span&gt;first word&lt;span style="color:#f92672"&gt;)&lt;/span&gt;: Yes
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;mrs quarantine&lt;/code&gt;: print the quarantined chunks (and their shadow bit values of the allocation first word).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-sh" data-lang="sh"&gt;gef&amp;gt;  mrs quarantine 
+application_quarantine&lt;span style="color:#f92672"&gt;[&lt;/span&gt;size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x5100, count&lt;span style="color:#f92672"&gt;=&lt;/span&gt;4&lt;span style="color:#f92672"&gt;]&lt;/span&gt; 
+  →  Chunk&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40c20700, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x700&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+  →  Chunk&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40c36000, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x400&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+  →  Chunk&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40c40000, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x4000&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+  →  Chunk&lt;span style="color:#f92672"&gt;(&lt;/span&gt;addr&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x40c44000, size&lt;span style="color:#f92672"&gt;=&lt;/span&gt;0x600&lt;span style="color:#f92672"&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</content>
+</item>
+<item>
+<title>Exploring snmalloc internals</title>
+<link>/research/snmalloc/</link>
+<pubDate>Thu, 14 Mar 2024 21:09:58 +0000</pubDate>
+<guid>/research/snmalloc/</guid>
+<description>Note: this is an updating post.
+Introduction snmalloc is a memory allocator by Microsoft Research that uses a &amp;ldquo;message passing&amp;rdquo; scheme. You can find its source code here. It is designed to be performant in highly parallel workloads where memory allocated in one thread is typically deallocated in another thread. A nice catch is that snmalloc is highly customizable, and more to my interest, security mitigations can be customized. It also provides abstraction layers for different architectures (AAL) and platforms (PAL).</description>
+<content>&lt;p&gt;&lt;em&gt;Note&lt;/em&gt;: this is an updating post.&lt;/p&gt;
+&lt;h2 id="introduction"&gt;Introduction&lt;/h2&gt;
+&lt;p&gt;snmalloc is a memory allocator by Microsoft Research that uses a &amp;ldquo;message passing&amp;rdquo; scheme. You can find its source code &lt;a href="https://github.com/microsoft/snmalloc"&gt;here&lt;/a&gt;. It is designed to be performant in highly parallel workloads where memory allocated in one thread is typically deallocated in another thread.
+A nice catch is that snmalloc is highly customizable, and more to my interest, security mitigations can be customized. It also provides abstraction layers for different architectures (AAL) and platforms (PAL).&lt;/p&gt;
+&lt;p&gt;snmalloc is available as an allocator in CheriBSD, which is a fork of FreeBSD with CHERI support.
+Currently, jemalloc is still the default allocator in FreeBSD but we can build with &lt;code&gt;LIBC_MALLOC=snmalloc&lt;/code&gt; make options to try snmalloc out.&lt;/p&gt;
+&lt;p&gt;This article documents my exploration of the internals of snmalloc as available in &lt;a href="https://github.com/microsoft/snmalloc"&gt;its official repository&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id="custom-configuration"&gt;Custom configuration&lt;/h2&gt;
+&lt;p&gt;The default behaviour of the snmalloc global memory allocator is defined by the &lt;code&gt;StandardConfig&lt;/code&gt; class in &lt;code&gt;backend/globalconfig.h&lt;/code&gt; but it can be customized by defining the &lt;code&gt;SNMALLOC_PROVIDE_OWN_CONFIG&lt;/code&gt; macro and exporting a customized allocator type as &lt;code&gt;snmalloc::Alloc&lt;/code&gt;, as in:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-cpp" data-lang="cpp"&gt;&lt;span style="color:#75715e"&gt;// backend/globalconfig.h
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;  &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * Create allocator type for this configuration.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   */&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;using&lt;/span&gt; Alloc &lt;span style="color:#f92672"&gt;=&lt;/span&gt; snmalloc&lt;span style="color:#f92672"&gt;::&lt;/span&gt;LocalAllocator&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;snmalloc&lt;span style="color:#f92672"&gt;::&lt;/span&gt;StandardConfig&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt;;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The configuration class defines the implementation of &lt;code&gt;Pagemap&lt;/code&gt; and &lt;code&gt;Authmap&lt;/code&gt; (only relevant to architectures that support strict provenance, for now just CHERI), the &lt;code&gt;Backend&lt;/code&gt; and the &lt;code&gt;LocalState&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;We will assume the given standard config in this article.&lt;/p&gt;
+&lt;h2 id="frontend-vs-backend"&gt;Frontend vs backend&lt;/h2&gt;
+&lt;p&gt;There are many mentions of the concepts of frontend and backend in the (quite detailed) documentation in snmalloc&amp;rsquo;s repository. In simple terms, a frontend allocator gets &lt;em&gt;raw memory chunks&lt;/em&gt; from the backend and assigns allocator-specific metadata to them, like sizeclass and slab information. The backend interfaces with the kernel with memory-mapping operations and keeps track of memory chunks to service the frontend.&lt;/p&gt;
+&lt;p&gt;The backend behavior is defined by the &lt;code&gt;Backend&lt;/code&gt; class in the configuration. The frontend behavior is defined by the &lt;code&gt;Alloc&lt;/code&gt; class exported by the configuration, which is a &lt;code&gt;LocalAllocator&lt;/code&gt;. Each local allocator has an associated core allocator &lt;code&gt;core_alloc&lt;/code&gt; of type &lt;code&gt;CoreAlloc&lt;/code&gt; and a cache &lt;code&gt;local_cache&lt;/code&gt; to hold freelists of small sizeclass.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-cpp" data-lang="cpp"&gt;&lt;span style="color:#75715e"&gt;// mem/localalloc.h
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;  &lt;span style="color:#66d9ef"&gt;template&lt;/span&gt;&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;SNMALLOC_CONCEPT(IsConfig) Config_&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;class&lt;/span&gt; &lt;span style="color:#a6e22e"&gt;LocalAllocator&lt;/span&gt;
+  {
+    &lt;span style="color:#75715e"&gt;// [...]
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;  &lt;span style="color:#66d9ef"&gt;private&lt;/span&gt;&lt;span style="color:#f92672"&gt;:&lt;/span&gt;
+    &lt;span style="color:#75715e"&gt;// [...]
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;
+    &lt;span style="color:#75715e"&gt;// Free list per small size class.  These are used for
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;    &lt;span style="color:#75715e"&gt;// allocation on the fast path. This part of the code is inspired by
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;    &lt;span style="color:#75715e"&gt;// mimalloc.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;    &lt;span style="color:#75715e"&gt;// Also contains remote deallocation cache.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;    LocalCache local_cache{&lt;span style="color:#f92672"&gt;&amp;amp;&lt;/span&gt;Config&lt;span style="color:#f92672"&gt;::&lt;/span&gt;unused_remote};
+
+    &lt;span style="color:#75715e"&gt;// Underlying allocator for most non-fast path operations.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;    CoreAlloc&lt;span style="color:#f92672"&gt;*&lt;/span&gt; core_alloc{&lt;span style="color:#66d9ef"&gt;nullptr&lt;/span&gt;};
+    
+    &lt;span style="color:#75715e"&gt;// [...]
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;  }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The exposed API to the user, eg. &lt;code&gt;malloc&lt;/code&gt;, &lt;code&gt;free&lt;/code&gt;, &lt;code&gt;realloc&lt;/code&gt;, are wrappers around the &lt;code&gt;ThreadAlloc&lt;/code&gt; class, which is in turn a wrapper around &lt;code&gt;Alloc&lt;/code&gt; (see &lt;code&gt;global/global.h&lt;/code&gt; and &lt;code&gt;override/override.h&lt;/code&gt;). &lt;code&gt;ThreadAlloc&lt;/code&gt; is used to hold a thread-local allocator of configurable type &lt;code&gt;Alloc&lt;/code&gt; and the thread-local state. This is similar to tcaches in Linux glibc malloc: each thread has their own local allocator object with their own &lt;code&gt;small_fast_free_lists&lt;/code&gt; in &lt;code&gt;local_cache&lt;/code&gt;. While local allocators are associated with one core allocator, a core allocator can be associated with many local allocators of different threads, in which case they are sharing the same &lt;em&gt;global&lt;/em&gt; state (similar to how different threads share the same &lt;code&gt;fastbins&lt;/code&gt;, &lt;code&gt;small_bins&lt;/code&gt;, &lt;code&gt;unsorted_bins&lt;/code&gt; and &lt;code&gt;large_bins&lt;/code&gt; in glibc).&lt;/p&gt;
+&lt;p&gt;Apart from &lt;code&gt;ThreadAlloc&lt;/code&gt;, &lt;code&gt;ScopedAllocator&lt;/code&gt; is another wrapper around &lt;code&gt;Alloc&lt;/code&gt; that doesn&amp;rsquo;t depend on thread-local storage, so it can be used as a bootstrapping (slow) allocator, as in &lt;code&gt;test/func/thread_alloc_external/thread_alloc_external.cc&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id="frontend-allocation"&gt;Frontend allocation&lt;/h2&gt;
+&lt;p&gt;Because the snmalloc code base uses &lt;code&gt;CapPtr&amp;lt;T, B&amp;gt;&lt;/code&gt; heavily to annotate pointers to heap memory with &lt;em&gt;bounding&lt;/em&gt;, we will use the same terminology to refer to the memory allocations. That is, a certain allocation can be a:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;Alloc&lt;/code&gt;: this is owned by the frontend&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Chunk&lt;/code&gt;: the backend manages chunk allocations and returns them to the frontend. This is what I called &lt;em&gt;raw chunks&lt;/em&gt;. The frontend assigns metadata to chunks and &lt;em&gt;converts them&lt;/em&gt; into allocs&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Arena&lt;/code&gt;: only owned by the backend, which are then further refined into chunks&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-cpp" data-lang="cpp"&gt;&lt;span style="color:#75715e"&gt;// ds_core/ptrwrap.h
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;    &lt;span style="color:#66d9ef"&gt;namespace&lt;/span&gt; bounds
+    {
+      &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;       * Internal access to an entire Arena.  These exist only in the backend.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;       */&lt;/span&gt;
+      &lt;span style="color:#66d9ef"&gt;using&lt;/span&gt; Arena &lt;span style="color:#f92672"&gt;=&lt;/span&gt; bound&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;
+        dimension&lt;span style="color:#f92672"&gt;::&lt;/span&gt;Spatial&lt;span style="color:#f92672"&gt;::&lt;/span&gt;Arena,
+        dimension&lt;span style="color:#f92672"&gt;::&lt;/span&gt;AddressSpaceControl&lt;span style="color:#f92672"&gt;::&lt;/span&gt;Full,
+        dimension&lt;span style="color:#f92672"&gt;::&lt;/span&gt;Wildness&lt;span style="color:#f92672"&gt;::&lt;/span&gt;Tame&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt;;
+
+      &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;       * Internal access to a Chunk of memory.  These flow across the boundary
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;       * between back- and front-ends, for example.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;       */&lt;/span&gt;
+      &lt;span style="color:#66d9ef"&gt;using&lt;/span&gt; Chunk &lt;span style="color:#f92672"&gt;=&lt;/span&gt; bound&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;
+        dimension&lt;span style="color:#f92672"&gt;::&lt;/span&gt;Spatial&lt;span style="color:#f92672"&gt;::&lt;/span&gt;Chunk,
+        dimension&lt;span style="color:#f92672"&gt;::&lt;/span&gt;AddressSpaceControl&lt;span style="color:#f92672"&gt;::&lt;/span&gt;Full,
+        dimension&lt;span style="color:#f92672"&gt;::&lt;/span&gt;Wildness&lt;span style="color:#f92672"&gt;::&lt;/span&gt;Tame&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt;;
+
+      &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;       * User access to an entire Chunk.  Used as an ephemeral state when
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;       * returning a large allocation.  See capptr_chunk_is_alloc.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;       */&lt;/span&gt;
+      &lt;span style="color:#66d9ef"&gt;using&lt;/span&gt; ChunkUser &lt;span style="color:#f92672"&gt;=&lt;/span&gt;
+        Chunk&lt;span style="color:#f92672"&gt;::&lt;/span&gt;with_address_space_control&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;dimension&lt;span style="color:#f92672"&gt;::&lt;/span&gt;AddressSpaceControl&lt;span style="color:#f92672"&gt;::&lt;/span&gt;User&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt;;
+
+      &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;       * Internal access to just one allocation (usually, within a slab).
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;       */&lt;/span&gt;
+      &lt;span style="color:#66d9ef"&gt;using&lt;/span&gt; AllocFull &lt;span style="color:#f92672"&gt;=&lt;/span&gt; Chunk&lt;span style="color:#f92672"&gt;::&lt;/span&gt;with_spatial&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;dimension&lt;span style="color:#f92672"&gt;::&lt;/span&gt;Spatial&lt;span style="color:#f92672"&gt;::&lt;/span&gt;Alloc&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt;;
+
+      &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;       * User access to just one allocation (usually, within a slab).
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;       */&lt;/span&gt;
+      &lt;span style="color:#66d9ef"&gt;using&lt;/span&gt; Alloc &lt;span style="color:#f92672"&gt;=&lt;/span&gt; AllocFull&lt;span style="color:#f92672"&gt;::&lt;/span&gt;with_address_space_control&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;
+        dimension&lt;span style="color:#f92672"&gt;::&lt;/span&gt;AddressSpaceControl&lt;span style="color:#f92672"&gt;::&lt;/span&gt;User&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt;;
+
+      &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;       * A wild (i.e., putative) CBAllocExport pointer handed back by the
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;       * client. See capptr_from_client() and capptr_domesticate().
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;       */&lt;/span&gt;
+      &lt;span style="color:#66d9ef"&gt;using&lt;/span&gt; AllocWild &lt;span style="color:#f92672"&gt;=&lt;/span&gt; Alloc&lt;span style="color:#f92672"&gt;::&lt;/span&gt;with_wildness&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;dimension&lt;span style="color:#f92672"&gt;::&lt;/span&gt;Wildness&lt;span style="color:#f92672"&gt;::&lt;/span&gt;Wild&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt;;
+    } &lt;span style="color:#75715e"&gt;// namespace bounds
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;I know it gets confusing, especially if you have familiarity with other memory allocators that use the same name to refer to different concepts. Shikata ga nai, hopefully I&amp;rsquo;m clear enough and not confused myself.&lt;/p&gt;
+&lt;h3 id="allocators"&gt;Allocators&lt;/h3&gt;
+&lt;p&gt;As I said, a &lt;code&gt;malloc&lt;/code&gt; request first reaches the local allocator. The local allocator is said to handle fast path allocations as it contains freelists in its local cache that store previously freed allocs (think glibc tcache). If there are no allocs of the requested size, it delegates the allocation request to its core allocator and that is slow path allocation. Some key functions exposed by &lt;code&gt;LocalAllocator&lt;/code&gt; are:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;alloc&lt;/code&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;alloc_not_small&lt;/code&gt;: for large requests, request a chunk from the backend and insert into the core allocator &lt;code&gt;laden&lt;/code&gt; list of inactive slabs.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;small_alloc&lt;/code&gt;: for requests that are representable in a small sizeclass, first check the local cache. If there are no entries in the small fast freelist, invoke the core allocator &lt;code&gt;small_alloc&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;dealloc&lt;/code&gt;: deallocation is delegated to the core allocator&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;A core allocator is a stateful allocator containing slabs &lt;code&gt;alloc_classes&lt;/code&gt; and other fields like &lt;code&gt;laden&lt;/code&gt;, &lt;code&gt;entropy&lt;/code&gt;, &lt;code&gt;backend_state&lt;/code&gt;, &lt;code&gt;attached_cache&lt;/code&gt;. Slabs are fixed-size allocations that can be split into smaller. It interfaces with the backend to expose a higher level message object allocation API:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;small_alloc&lt;/code&gt;: check for a slab of the requested small sizeclass and get an alloc from the slab. Then update the slab state to inactive if it becomes inactive (moved to &lt;code&gt;laden&lt;/code&gt;). &lt;code&gt;BackendSlabMetadata::alloc_free_list&lt;/code&gt; fills the small fast freelists in the local cache with the remaining elements in the slab.
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;small_alloc_slow&lt;/code&gt;: if there is no slab that serves allocs of the requested size, request the backend for a chunk to construct a new slab.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;dealloc_local_object&lt;/code&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;dealloc_local_object_fast&lt;/code&gt;: the alloc is inserted into its associated slab freelist.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;dealloc_local_object_slow&lt;/code&gt;: the slow path is triggered when the associated slab has &lt;code&gt;needed_ == 0&lt;/code&gt;. If the case of:
+&lt;ul&gt;
+&lt;li&gt;A large alloc: the chunk is returned to the backend (&lt;code&gt;dealloc_chunk&lt;/code&gt;)&lt;/li&gt;
+&lt;li&gt;A sleeping slab: the addition of a freed object to its freelist hits the threshold to wake up the slab to start servicing requests&lt;/li&gt;
+&lt;li&gt;An unused slab after this deallocation: this can trigger the deallocation of unused slabs of the same sizeclass if there are enough of them&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-cpp" data-lang="cpp"&gt;    &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * The number of deallocation required until we hit a slow path. This
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * counts down in two different ways that are handled the same on the
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * fast path.  The first is
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     *   - deallocations until the slab has sufficient entries to be considered
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     *   useful to allocate from.  This could be as low as 1, or when we have
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     *   a requirement for entropy then it could be much higher.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     *   - deallocations until the slab is completely unused.  This is needed
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     *   to be detected, so that the statistics can be kept up to date, and
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     *   potentially return memory to the a global pool of slabs/chunks.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     */&lt;/span&gt;
+    &lt;span style="color:#66d9ef"&gt;uint16_t&lt;/span&gt; needed_ &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;0&lt;/span&gt;;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This is a snipped of the core allocator fields.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-cpp" data-lang="cpp"&gt;&lt;span style="color:#75715e"&gt;// class CoreAllocator
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;// ...
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;    &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * Define local names for specialised versions of various types that are
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * specialised for the back-end that we are using.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * @{
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     */&lt;/span&gt;
+    &lt;span style="color:#66d9ef"&gt;using&lt;/span&gt; BackendSlabMetadata &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;typename&lt;/span&gt; Config&lt;span style="color:#f92672"&gt;::&lt;/span&gt;Backend&lt;span style="color:#f92672"&gt;::&lt;/span&gt;SlabMetadata;
+    &lt;span style="color:#66d9ef"&gt;using&lt;/span&gt; PagemapEntry &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;typename&lt;/span&gt; Config&lt;span style="color:#f92672"&gt;::&lt;/span&gt;PagemapEntry;
+    &lt;span style="color:#75715e"&gt;/// }@
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;
+    &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * Per size class list of active slabs for this allocator.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     */&lt;/span&gt;
+    &lt;span style="color:#66d9ef"&gt;struct&lt;/span&gt; &lt;span style="color:#a6e22e"&gt;SlabMetadataCache&lt;/span&gt;
+    {
+      SeqSet&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;BackendSlabMetadata&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt; available{};
+
+      &lt;span style="color:#66d9ef"&gt;uint16_t&lt;/span&gt; unused &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;0&lt;/span&gt;;
+      &lt;span style="color:#66d9ef"&gt;uint16_t&lt;/span&gt; length &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;0&lt;/span&gt;;
+    } alloc_classes[NUM_SMALL_SIZECLASSES]{};
+
+    &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * The set of all slabs and large allocations
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * from this allocator that are full or almost full.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     */&lt;/span&gt;
+    SeqSet&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;BackendSlabMetadata&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt; laden{};
+&lt;span style="color:#75715e"&gt;// ...
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;As snmalloc is a message passing allocator, you can expect other message queue operations: &lt;code&gt;init_message_queue&lt;/code&gt;, &lt;code&gt;handle_message_queue&lt;/code&gt;, &lt;code&gt;post&lt;/code&gt;, &lt;code&gt;flush&lt;/code&gt;&amp;hellip; that I won&amp;rsquo;t dig in just now.&lt;/p&gt;
+&lt;p&gt;Additionally, each local allocator is associated with a remote allocator. It represents a message queue of freed objects so that an object can be allocated by one allocator and deallocated by a different allocator in a message passing fashion.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-cpp" data-lang="cpp"&gt;&lt;span style="color:#75715e"&gt;// mem/remoteallocator.h
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;  &lt;span style="color:#66d9ef"&gt;struct&lt;/span&gt; &lt;span style="color:#a6e22e"&gt;alignas&lt;/span&gt;(REMOTE_MIN_ALIGN) RemoteAllocator
+  {
+    &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * Global key for all remote lists.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * Note that we use a single key for all remote free lists and queues.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * This is so that we do not have to recode next pointers when sending
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * segments, and look up specific keys based on destination.  This is
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * potentially more performant, but could make it easier to guess the key.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     */&lt;/span&gt;
+    &lt;span style="color:#66d9ef"&gt;inline&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;static&lt;/span&gt; FreeListKey key_global{&lt;span style="color:#ae81ff"&gt;0xdeadbeef&lt;/span&gt;, &lt;span style="color:#ae81ff"&gt;0xbeefdead&lt;/span&gt;, &lt;span style="color:#ae81ff"&gt;0xdeadbeef&lt;/span&gt;};
+
+    &lt;span style="color:#66d9ef"&gt;using&lt;/span&gt; alloc_id_t &lt;span style="color:#f92672"&gt;=&lt;/span&gt; address_t;
+
+    &lt;span style="color:#75715e"&gt;// Store the message queue on a separate cacheline. It is mutable data that
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;    &lt;span style="color:#75715e"&gt;// is read by other threads.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;    &lt;span style="color:#66d9ef"&gt;alignas&lt;/span&gt;(CACHELINE_SIZE) freelist&lt;span style="color:#f92672"&gt;::&lt;/span&gt;AtomicQueuePtr back{&lt;span style="color:#66d9ef"&gt;nullptr&lt;/span&gt;};
+    &lt;span style="color:#75715e"&gt;// Store the two ends on different cache lines as access by different
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;    &lt;span style="color:#75715e"&gt;// threads.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;    &lt;span style="color:#66d9ef"&gt;alignas&lt;/span&gt;(CACHELINE_SIZE) freelist&lt;span style="color:#f92672"&gt;::&lt;/span&gt;AtomicQueuePtr front{&lt;span style="color:#66d9ef"&gt;nullptr&lt;/span&gt;};
+    &lt;span style="color:#75715e"&gt;// Fake first entry
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;    freelist&lt;span style="color:#f92672"&gt;::&lt;/span&gt;Object&lt;span style="color:#f92672"&gt;::&lt;/span&gt;T&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;capptr&lt;span style="color:#f92672"&gt;::&lt;/span&gt;bounds&lt;span style="color:#f92672"&gt;::&lt;/span&gt;AllocWild&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt; stub{};
+    &lt;span style="color:#75715e"&gt;// [...]
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;  }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id="metaentry-vs-slabmetadata"&gt;MetaEntry vs SlabMetadata&lt;/h3&gt;
+&lt;p&gt;Every allocation, be it owned by frontend or backend, has a metaentry stored in the pagemap. However, allocs in the frontend have additional metadata related to the slab and they are stored in &lt;code&gt;SlabMetadata&lt;/code&gt; objects. Backend chunks don&amp;rsquo;t have this same slab metadata because this slab representation is specific to the frontend.&lt;/p&gt;
+&lt;p&gt;Metaentries are stored in a pagemap. The default &lt;code&gt;FlatPagemap&lt;/code&gt; implementation has an array of pointers to metaentries (&lt;code&gt;body&lt;/code&gt;).&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-cpp" data-lang="cpp"&gt;&lt;span style="color:#75715e"&gt;// ds/pagemap.h
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;  &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * Simple pagemap that for each GRANULARITY_BITS of the address range
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * stores a T.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   */&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;template&lt;/span&gt;&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;size_t GRANULARITY_BITS, &lt;span style="color:#66d9ef"&gt;typename&lt;/span&gt; T, &lt;span style="color:#66d9ef"&gt;typename&lt;/span&gt; PAL, &lt;span style="color:#66d9ef"&gt;bool&lt;/span&gt; has_bounds&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;class&lt;/span&gt; &lt;span style="color:#a6e22e"&gt;FlatPagemap&lt;/span&gt;
+  {
+  &lt;span style="color:#66d9ef"&gt;public&lt;/span&gt;&lt;span style="color:#f92672"&gt;:&lt;/span&gt;
+    &lt;span style="color:#66d9ef"&gt;static&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;constexpr&lt;/span&gt; size_t SHIFT &lt;span style="color:#f92672"&gt;=&lt;/span&gt; GRANULARITY_BITS;
+    &lt;span style="color:#66d9ef"&gt;static&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;constexpr&lt;/span&gt; size_t GRANULARITY &lt;span style="color:#f92672"&gt;=&lt;/span&gt; bits&lt;span style="color:#f92672"&gt;::&lt;/span&gt;one_at_bit(GRANULARITY_BITS);
+
+  &lt;span style="color:#66d9ef"&gt;private&lt;/span&gt;&lt;span style="color:#f92672"&gt;:&lt;/span&gt;
+    &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * Before init is called will contain a single entry
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * that is the default value.  This is needed so that
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * various calls do not have to check for nullptr.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     *   free(nullptr)
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * and
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     *   malloc_usable_size(nullptr)
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * do not require an allocation to have ocurred before
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * they are called.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     */&lt;/span&gt;
+    &lt;span style="color:#66d9ef"&gt;inline&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;static&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;const&lt;/span&gt; T default_value{};
+
+    &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * The representation of the page map.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * Initially a single element to ensure nullptr operations
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * work.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     */&lt;/span&gt;
+    T&lt;span style="color:#f92672"&gt;*&lt;/span&gt; body{&lt;span style="color:#66d9ef"&gt;const_cast&lt;/span&gt;&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;T&lt;span style="color:#f92672"&gt;*&amp;gt;&lt;/span&gt;(&lt;span style="color:#f92672"&gt;&amp;amp;&lt;/span&gt;default_value)};
+
+    &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * The representation of the pagemap, but nullptr if it has not been
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * initialised.  Used to combine init checking and lookup.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     */&lt;/span&gt;
+    T&lt;span style="color:#f92672"&gt;*&lt;/span&gt; body_opt{&lt;span style="color:#66d9ef"&gt;nullptr&lt;/span&gt;};
+
+    &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * If `has_bounds` is set, then these should contain the
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * bounds of the heap that is being managed by this pagemap.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     */&lt;/span&gt;
+    address_t base{&lt;span style="color:#ae81ff"&gt;0&lt;/span&gt;};
+    size_t size{&lt;span style="color:#ae81ff"&gt;0&lt;/span&gt;};
+&lt;span style="color:#75715e"&gt;// [...]
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;  }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;A metaentry consists of two fields of the size of a pointer of the target architecture: &lt;code&gt;meta&lt;/code&gt; and &lt;code&gt;remote_and_sizeclass&lt;/code&gt; (abbreviated &lt;code&gt;ras&lt;/code&gt;). For an alloc, &lt;code&gt;meta&lt;/code&gt; points to its &lt;code&gt;SlabMetadata&lt;/code&gt; object, but for chunks in the backend, it can have other meanings. For an alloc, &lt;code&gt;ras&lt;/code&gt; encodes a reference to the owning frontend allocator&amp;rsquo;s message queue &lt;code&gt;RemoteAllocator&lt;/code&gt; and the sizeclass. Again, this field has a different meaning for backend owned chunks.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-cpp" data-lang="cpp"&gt;  &lt;span style="color:#66d9ef"&gt;class&lt;/span&gt; &lt;span style="color:#a6e22e"&gt;MetaEntryBase&lt;/span&gt;
+  {
+  &lt;span style="color:#66d9ef"&gt;protected&lt;/span&gt;&lt;span style="color:#f92672"&gt;:&lt;/span&gt;
+  &lt;span style="color:#75715e"&gt;// [...]
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;    &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * In common cases, the pointer to the slab metadata.  See
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * docs/AddressSpace.md for additional details.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * The bottom bit is used to indicate if this is the first chunk in a PAL
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * allocation, that cannot be combined with the preceeding chunk.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     */&lt;/span&gt;
+    uintptr_t meta{&lt;span style="color:#ae81ff"&gt;0&lt;/span&gt;};
+
+    &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * In common cases, a bit-packed pointer to the owning allocator (if any),
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * and the sizeclass of this chunk.  See `encode` for
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * details of this case and docs/AddressSpace.md for further details.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     */&lt;/span&gt;
+    uintptr_t remote_and_sizeclass{&lt;span style="color:#ae81ff"&gt;0&lt;/span&gt;};
+  &lt;span style="color:#75715e"&gt;// [...]
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;  };
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Every alloc has a slabmetadata object which links it to a slab. A slab consists of a freelist (or two in case the &lt;code&gt;random_preserve&lt;/code&gt; mitigation is enabled) of freed allocs.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-cpp" data-lang="cpp"&gt;&lt;span style="color:#75715e"&gt;// [...]
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;    &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     *  Data-structure for building the free list for this slab.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     */&lt;/span&gt;
+    SNMALLOC_NO_UNIQUE_ADDRESS freelist&lt;span style="color:#f92672"&gt;::&lt;/span&gt;Builder&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;mitigations(random_preserve)&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt;
+      free_queue;
+
+    &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * The number of deallocation required until we hit a slow path. This
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * counts down in two different ways that are handled the same on the
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * fast path.  The first is
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     *   - deallocations until the slab has sufficient entries to be considered
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     *   useful to allocate from.  This could be as low as 1, or when we have
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     *   a requirement for entropy then it could be much higher.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     *   - deallocations until the slab is completely unused.  This is needed
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     *   to be detected, so that the statistics can be kept up to date, and
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     *   potentially return memory to the a global pool of slabs/chunks.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     */&lt;/span&gt;
+    &lt;span style="color:#66d9ef"&gt;uint16_t&lt;/span&gt; needed_ &lt;span style="color:#f92672"&gt;=&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;0&lt;/span&gt;;
+
+    &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * Flag that is used to indicate that the slab is currently not active.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * I.e. it is not in a CoreAllocator cache for the appropriate sizeclass.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     */&lt;/span&gt;
+    &lt;span style="color:#66d9ef"&gt;bool&lt;/span&gt; sleeping_ &lt;span style="color:#f92672"&gt;=&lt;/span&gt; false;
+
+    &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * Flag to indicate this is actually a large allocation rather than a slab
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * of small allocations.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     */&lt;/span&gt;
+    &lt;span style="color:#66d9ef"&gt;bool&lt;/span&gt; large_ &lt;span style="color:#f92672"&gt;=&lt;/span&gt; false;
+&lt;span style="color:#75715e"&gt;// [...]
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="backend-allocation"&gt;Backend allocation&lt;/h2&gt;
+&lt;p&gt;The backend manages memory allocations from the platform. This layer deals with &lt;code&gt;Chunk&lt;/code&gt;-bounded pointers &lt;code&gt;capptr::Chunk&amp;lt;void&amp;gt;&lt;/code&gt;. For every object allocation request, the frontend actually asks for two chunks, one for the slab metadata and one for the user data chunk. Some key functions are:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;alloc_meta_data&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;dealloc_meta_data&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;alloc_chunk&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;dealloc_chunk&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-cpp" data-lang="cpp"&gt;  &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * This class implements the standard backend for handling allocations.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * It is parameterised by its Pagemap management and
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * address space management (LocalState).
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   */&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;template&lt;/span&gt;&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;
+    SNMALLOC_CONCEPT(IsPAL) PAL,
+    &lt;span style="color:#66d9ef"&gt;typename&lt;/span&gt; PagemapEntry,
+    &lt;span style="color:#66d9ef"&gt;typename&lt;/span&gt; Pagemap,
+    &lt;span style="color:#66d9ef"&gt;typename&lt;/span&gt; Authmap,
+    &lt;span style="color:#66d9ef"&gt;typename&lt;/span&gt; LocalState&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;class&lt;/span&gt; &lt;span style="color:#a6e22e"&gt;BackendAllocator&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The metadata and the user data chunks are allocated differently. Metadata chunks are serviced by &lt;code&gt;local_state-&amp;gt;get_meta_range()&lt;/code&gt; while user data chunks are serviced by &lt;code&gt;local_state-&amp;gt;get_object_range()&lt;/code&gt;. What are these ranges? Ranges are similar to passes in compilers: it takes a pointer to a chunk and applies a set of operations to it before returning it. A range exposes the APIs &lt;code&gt;alloc_range&lt;/code&gt; and &lt;code&gt;dealloc_range&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;LocalState&lt;/code&gt; contains information about the ranges used by a backend allocator. For example, the default &lt;code&gt;LocalState&lt;/code&gt; is defined as:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-cpp" data-lang="cpp"&gt;    &lt;span style="color:#66d9ef"&gt;using&lt;/span&gt; LocalState &lt;span style="color:#f92672"&gt;=&lt;/span&gt; std&lt;span style="color:#f92672"&gt;::&lt;/span&gt;conditional_t&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;
+      mitigations(metadata_protection),
+      MetaProtectedRangeLocalState&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;Pal, Pagemap, Base&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt;,
+      StandardLocalState&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;Pal, Pagemap, Base&lt;span style="color:#f92672"&gt;&amp;gt;&amp;gt;&lt;/span&gt;;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;And &lt;code&gt;StandardLocalState&lt;/code&gt; exposes &lt;code&gt;get_object_range&lt;/code&gt; and &lt;code&gt;get_meta_range&lt;/code&gt;, so that user chunks are allocated through &lt;code&gt;LargeObjectRange&lt;/code&gt; while metadata requests are allocated through &lt;code&gt;ObjectRange&lt;/code&gt; (&lt;code&gt;SmallBuddyRange&lt;/code&gt; then &lt;code&gt;LargeObjectRange&lt;/code&gt;).&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-cpp" data-lang="cpp"&gt;&lt;span style="color:#75715e"&gt;// ...
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;  &lt;span style="color:#66d9ef"&gt;private&lt;/span&gt;&lt;span style="color:#f92672"&gt;:&lt;/span&gt;
+    &lt;span style="color:#66d9ef"&gt;using&lt;/span&gt; ObjectRange &lt;span style="color:#f92672"&gt;=&lt;/span&gt; Pipe&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;LargeObjectRange, SmallBuddyRange&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt;;
+
+    ObjectRange object_range;
+
+  &lt;span style="color:#66d9ef"&gt;public&lt;/span&gt;&lt;span style="color:#f92672"&gt;:&lt;/span&gt;
+    &lt;span style="color:#75715e"&gt;// Expose a global range for the initial allocation of meta-data.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;    &lt;span style="color:#66d9ef"&gt;using&lt;/span&gt; GlobalMetaRange &lt;span style="color:#f92672"&gt;=&lt;/span&gt; Pipe&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;ObjectRange, GlobalRange&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt;;
+
+    &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * Where we turn for allocations of user chunks.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * Reach over the SmallBuddyRange that&amp;#39;s at the near end of the ObjectRange
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * pipe, rather than having that range adapter dynamically branch to its
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * parent.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     */&lt;/span&gt;
+    LargeObjectRange&lt;span style="color:#f92672"&gt;*&lt;/span&gt; &lt;span style="color:#a6e22e"&gt;get_object_range&lt;/span&gt;()
+    {
+      &lt;span style="color:#66d9ef"&gt;return&lt;/span&gt; object_range.&lt;span style="color:#66d9ef"&gt;template&lt;/span&gt; ancestor&lt;span style="color:#f92672"&gt;&amp;lt;&lt;/span&gt;LargeObjectRange&lt;span style="color:#f92672"&gt;&amp;gt;&lt;/span&gt;();
+    }
+
+    &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * The backend has its own need for small objects without using the
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     * frontend allocators; this range manages those.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;     */&lt;/span&gt;
+    ObjectRange&lt;span style="color:#f92672"&gt;&amp;amp;&lt;/span&gt; get_meta_range()
+    {
+      &lt;span style="color:#75715e"&gt;// Use the object range to service meta-data requests.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;&lt;/span&gt;      &lt;span style="color:#66d9ef"&gt;return&lt;/span&gt; object_range;
+    }
+&lt;span style="color:#75715e"&gt;// ...
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="other-concepts"&gt;Other concepts&lt;/h2&gt;
+&lt;p&gt;Other concepts (I will dig into in the future):&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Domestication: see &lt;code&gt;capptr_domesticate&lt;/code&gt;. This concerns inter-thread memory allocation requests.&lt;/li&gt;
+&lt;li&gt;Authmap: this is used to enforce strict provenance in AALs that support strict provenance (currently only AALs with AAL_CHERI mixin).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="freelist-and-seqset-structs"&gt;Freelist and SeqSet structs&lt;/h2&gt;
+&lt;p&gt;Snmalloc uses four iterable structures to link objects.&lt;/p&gt;
+&lt;h3 id="freelist-builder"&gt;Freelist Builder&lt;/h3&gt;
+&lt;p&gt;A builder can contain two freelist queues depending on whether &lt;code&gt;random_preserve&lt;/code&gt; mitigation is enabled.
+As per the comments, it is used to build a freelist in object space.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;What is the structure of a freelist builder?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;head&lt;/code&gt;: pointer to the first element, aka FreelistPtr&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;end&lt;/code&gt;: pointer to pointer to the last element, aka pointer to FreelistPtr&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;What uses a freelist builder?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;FrontendSlabMetadata-&amp;gt;free_queue&lt;/code&gt; keeps track of active &lt;code&gt;Alloc&lt;/code&gt;s under the slab&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;RemoteDeallocCache-&amp;gt;lists&lt;/code&gt; is an array of &lt;code&gt;Builder&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;How is it iterated?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Empty case: &lt;code&gt;end == &amp;amp;head&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;First element: &lt;code&gt;curr = head&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Next element: &lt;code&gt;curr.next_object&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Last element: &lt;code&gt;curr == end&lt;/code&gt; (&lt;code&gt;curr&lt;/code&gt; included)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="freelist-iter"&gt;Freelist Iter&lt;/h3&gt;
+&lt;p&gt;Used to iterate a freelist in object space.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;What is the structure of a freelist iter?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;curr&lt;/code&gt;: freelist pointer, aka pointer to the first element&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;What uses a freelist iter?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;LocalCache-&amp;gt;small_fast_free_lists&lt;/code&gt; is a primitive array of freelist iters&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;How is it iterated?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Empty case: &lt;code&gt;curr == nullptr&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;First element: &lt;code&gt;curr&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Next element: &lt;code&gt;curr.next_object&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Last element: right before the empty case (null terminator)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="seqset-sequential-set"&gt;SeqSet (sequential set)&lt;/h3&gt;
+&lt;p&gt;Doubly-linked cyclic list linked using T::node field.
+Used to group slab metadata in metadata space (not used in object space).&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;What is the structure of a seqset?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;head&lt;/code&gt;: a SeqSetNode (containing pointers next and prev)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;What uses a seqset?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Core allocator &lt;code&gt;laden&lt;/code&gt; groups &lt;code&gt;FrontendSlabMetadata&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Core allocator &lt;code&gt;alloc_classes&lt;/code&gt; contained &lt;code&gt;available&lt;/code&gt; which groups &lt;code&gt;FrontendSlabMetadata&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;How is it iterated?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Empty case: &lt;code&gt;head.next == &amp;amp;head&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;First case: &lt;code&gt;curr = head.next&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Next case: &lt;code&gt;curr.next&lt;/code&gt; (or &lt;code&gt;curr.prev&lt;/code&gt;)&lt;/li&gt;
+&lt;li&gt;Last case: right before the empty case&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="remote-deallocation-queue"&gt;Remote deallocation queue&lt;/h3&gt;
+&lt;p&gt;The remote deallocation queue uses a different iterable struct.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;What is the structure of a remote deallocation queue?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;back&lt;/code&gt;: freelist pointer&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;front&lt;/code&gt;: freelist pointer&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;stub&lt;/code&gt;: fake first entry&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;How is it iterated?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Empty case: &lt;code&gt;front == &amp;amp;stub&lt;/code&gt; or &lt;code&gt;back == nullptr&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;First element: &lt;code&gt;curr = front&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Next element: &lt;code&gt;curr.next_object&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Last element: right before &lt;code&gt;curr == nullptr&lt;/code&gt; or &lt;code&gt;curr == back&lt;/code&gt; (curr not included)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="security-checks"&gt;Security checks&lt;/h2&gt;
+&lt;p&gt;The security checks are nicely grouped in the &lt;code&gt;ds_core/mitigations.h&lt;/code&gt; header file.
+One future research question would be, how do these security mitigations affect the exploitability of memory safety bugs? One could test the added exploit constraints under different combinations of enabled security mitigations.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"&gt;&lt;code class="language-cpp" data-lang="cpp"&gt;  &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * Randomize the location of the pagemap within a larger address space
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * allocation.  The other pages in that allocation may fault if accessed, on
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * platforms that can efficiently express such configurations.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * This guards against adversarial attempts to access the pagemap.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * This is unnecessary on StrictProvenance architectures.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   */&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;constexpr&lt;/span&gt; mitigation&lt;span style="color:#f92672"&gt;::&lt;/span&gt;type random_pagemap{&lt;span style="color:#ae81ff"&gt;1&lt;/span&gt; &lt;span style="color:#f92672"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;0&lt;/span&gt;};
+  &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * Ensure that every slab (especially slabs used for larger &amp;#34;small&amp;#34; size
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * classes) has a larger minimum number of objects and that a larger
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * percentage of objects in a slab must be free to awaken the slab.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * This should frustrate use-after-reallocation attacks by delaying reuse.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * When combined with random_preserve, below, it additionally ensures that at
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * least some shuffling of free objects is possible, and, hence, that there
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * is at least some unpredictability of reuse.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * TODO: should this be split? mjp: Would require changing some thresholds.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * The min waking count needs to be ensure we have enough objects on a slab,
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * hence is related to the min count on a slab.  Currently we without this, we
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * have min count of slab of 16, and a min waking count with this enabled
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * of 32. So we would leak memory.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   */&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;constexpr&lt;/span&gt; mitigation&lt;span style="color:#f92672"&gt;::&lt;/span&gt;type random_larger_thresholds{&lt;span style="color:#ae81ff"&gt;1&lt;/span&gt; &lt;span style="color:#f92672"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;1&lt;/span&gt;};
+  &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * Obfuscate forward-edge pointers in intra-slab free lists.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * This helps prevent a UAF write from re-pointing the free list arbitrarily,
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * as the de-obfuscation of a corrupted pointer will generate a wild address.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * This is not available on StrictProvenance architectures.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   */&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;constexpr&lt;/span&gt; mitigation&lt;span style="color:#f92672"&gt;::&lt;/span&gt;type freelist_forward_edge{&lt;span style="color:#ae81ff"&gt;1&lt;/span&gt; &lt;span style="color:#f92672"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;2&lt;/span&gt;};
+  &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * Store obfuscated backward-edge addresses in intra-slab free lists.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * Ordinarily, these lists are singly-linked.  Storing backward-edges allows
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * the allocator to verify the well-formedness of the links and, importantly,
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * the acyclicity of the list itself.  These backward-edges are also
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * obfuscated in an attempt to frustrate an attacker armed with UAF
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * attempting to construct a new well-formed list.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * Because the backward-edges are not traversed, this is available on
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * StrictProvenance architectures, unlike freelist_forward_edge.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * This is required to detect double frees as it will break the doubly linked
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * nature of the free list.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   */&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;constexpr&lt;/span&gt; mitigation&lt;span style="color:#f92672"&gt;::&lt;/span&gt;type freelist_backward_edge{&lt;span style="color:#ae81ff"&gt;1&lt;/span&gt; &lt;span style="color:#f92672"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;3&lt;/span&gt;};
+  &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * When de-purposing a slab (releasing its address space for reuse at a
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * different size class or allocation), walk the free list and validate the
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * domestication of all nodes along it.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * If freelist_forward_edge is also enabled, this will probe the
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * domestication status of the de-obfuscated pointers before traversal.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * Each of domestication and traversal may probabilistically catch UAF
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * corruption of the free list.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * If freelist_backward_edge is also enabled, this will verify the integrity
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * of the free list links.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * This gives the allocator &amp;#34;one last chance&amp;#34; to catch UAF corruption of a
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * slab&amp;#39;s free list before the slab is de-purposed.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * This is required to comprehensively detect double free.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   */&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;constexpr&lt;/span&gt; mitigation&lt;span style="color:#f92672"&gt;::&lt;/span&gt;type freelist_teardown_validate{&lt;span style="color:#ae81ff"&gt;1&lt;/span&gt; &lt;span style="color:#f92672"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;4&lt;/span&gt;};
+  &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * When initializing a slab, shuffle its free list.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * This guards against attackers relying on object-adjacency or address-reuse
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * properties of the allocation stream.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   */&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;constexpr&lt;/span&gt; mitigation&lt;span style="color:#f92672"&gt;::&lt;/span&gt;type random_initial{&lt;span style="color:#ae81ff"&gt;1&lt;/span&gt; &lt;span style="color:#f92672"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;5&lt;/span&gt;};
+  &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * When a slab is operating, randomly assign freed objects to one of two
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * intra-slab free lists.  When selecting a slab&amp;#39;s free list for allocations,
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * select the longer of the two.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * This guards against attackers relying on object-adjacency or address-reuse
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * properties of the allocation stream.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   */&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;constexpr&lt;/span&gt; mitigation&lt;span style="color:#f92672"&gt;::&lt;/span&gt;type random_preserve{&lt;span style="color:#ae81ff"&gt;1&lt;/span&gt; &lt;span style="color:#f92672"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;6&lt;/span&gt;};
+  &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * Randomly introduce another slab for a given size-class, rather than use
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * the last available to an allocator.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * This guards against attackers relying on address-reuse, especially in the
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * pathological case of a size-class having only one slab with free entries.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   */&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;constexpr&lt;/span&gt; mitigation&lt;span style="color:#f92672"&gt;::&lt;/span&gt;type random_extra_slab{&lt;span style="color:#ae81ff"&gt;1&lt;/span&gt; &lt;span style="color:#f92672"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;7&lt;/span&gt;};
+  &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * Use a LIFO queue, rather than a stack, of slabs with free elements.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * This generally increases the time between address reuse.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   */&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;constexpr&lt;/span&gt; mitigation&lt;span style="color:#f92672"&gt;::&lt;/span&gt;type reuse_LIFO{&lt;span style="color:#ae81ff"&gt;1&lt;/span&gt; &lt;span style="color:#f92672"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;8&lt;/span&gt;};
+  &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * This performs a variety of inexpensive &amp;#34;sanity&amp;#34; tests throughout the
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * allocator:
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * - Requests to free objects must
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *   - not be interior pointers
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *   - be of allocated address space
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * - Requests to free objects which also specify the size must specify a size
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *   that agrees with the current allocation.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * This guards gainst various forms of client misbehavior.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * TODO: Should this be split? mjp: It could, but let&amp;#39;s not do this until
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * we have performance numbers to see what this costs.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   */&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;constexpr&lt;/span&gt; mitigation&lt;span style="color:#f92672"&gt;::&lt;/span&gt;type sanity_checks{&lt;span style="color:#ae81ff"&gt;1&lt;/span&gt; &lt;span style="color:#f92672"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;9&lt;/span&gt;};
+  &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * On CHERI, perform a series of well-formedness tests on capabilities given
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * when requesting to free an object.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   */&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;constexpr&lt;/span&gt; mitigation&lt;span style="color:#f92672"&gt;::&lt;/span&gt;type cheri_checks{&lt;span style="color:#ae81ff"&gt;1&lt;/span&gt; &lt;span style="color:#f92672"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;10&lt;/span&gt;};
+  &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * Erase intra-slab free list metadata before completing an allocation.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * This mitigates information disclosure.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   */&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;constexpr&lt;/span&gt; mitigation&lt;span style="color:#f92672"&gt;::&lt;/span&gt;type clear_meta{&lt;span style="color:#ae81ff"&gt;1&lt;/span&gt; &lt;span style="color:#f92672"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;11&lt;/span&gt;};
+  &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * Protect meta data blocks by allocating separate from chunks for
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * user allocations. This involves leaving gaps in address space.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * This is less efficient, so should only be applied for the checked
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * build.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   */&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;constexpr&lt;/span&gt; mitigation&lt;span style="color:#f92672"&gt;::&lt;/span&gt;type metadata_protection{&lt;span style="color:#ae81ff"&gt;1&lt;/span&gt; &lt;span style="color:#f92672"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;12&lt;/span&gt;};
+  &lt;span style="color:#75715e"&gt;/**
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * If this mitigation is enabled, then Pal implementations should provide
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * exceptions/segfaults if accesses do not obey the
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *  - using
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *  - using_readonly
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   *  - not_using
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   * model.
+&lt;/span&gt;&lt;span style="color:#75715e"&gt;   */&lt;/span&gt;
+  &lt;span style="color:#66d9ef"&gt;static&lt;/span&gt; &lt;span style="color:#66d9ef"&gt;constexpr&lt;/span&gt; mitigation&lt;span style="color:#f92672"&gt;::&lt;/span&gt;type pal_enforce_access{&lt;span style="color:#ae81ff"&gt;1&lt;/span&gt; &lt;span style="color:#f92672"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span style="color:#ae81ff"&gt;13&lt;/span&gt;};
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id="gef-plugin-for-snmalloc"&gt;GEF plugin for snmalloc&lt;/h2&gt;
+&lt;p&gt;I have developed a GEF plugin that adds a heap manager that understands snmalloc heap. It is limited to the default configuration and the default set of security mitigations.
+You can read more in &lt;a href="../labs/gef-cheri.md"&gt;this other blog post&lt;/a&gt; or &lt;a href="https://github.com/CTSRD-CHERI/gef-plugins"&gt;check it out&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Note&lt;/em&gt;: the plugin requires GEF with CHERI support because it assumes a separation of &lt;em&gt;address space size&lt;/em&gt; (&lt;code&gt;adrsize&lt;/code&gt;) and &lt;em&gt;pointer size&lt;/em&gt; (&lt;code&gt;ptrsize&lt;/code&gt;). The original GEF assumes &lt;code&gt;adrsize == ptrsize&lt;/code&gt; but this is not true for CHERI-enabled architectures.&lt;/p&gt;
+</content>
+</item>
+</channel>
+</rss>
